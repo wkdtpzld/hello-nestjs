@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MoviesService } from './movies.service';
+import { NotFoundException } from '@nestjs/common';
 
 describe('MoviesService', () => {
   let service: MoviesService;
@@ -14,5 +15,94 @@ describe('MoviesService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getAll()', () => {
+    it('should return an array', () => {
+      const result = service.getAll();
+      expect(result).toBeInstanceOf(Array);
+    });
+  });
+
+  describe('getOne()', () => {
+    it('should return a movie', () => {
+      service.createMovie({
+        title: 'Test Movie',
+        genres: ['Test'],
+        year: 2000,
+      });
+
+      const movie = service.getOne(1);
+      expect(movie).toBeDefined();
+    });
+    it('should throw 404 error', () => {
+      try {
+        service.getOne(999);
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+        expect(e.message).toEqual(`Movie with ID 999 not Found`);
+      }
+    });
+  });
+
+  describe('deleteOne', () => {
+    it('delete a mvoie', () => {
+      service.createMovie({
+        title: 'Test Movie',
+        genres: ['Test'],
+        year: 2000,
+      });
+      const allMovies = service.getAll();
+      service.deleteOne(1);
+      const afterDelete = service.getAll();
+
+      expect(afterDelete.length).toBeLessThan(allMovies.length);
+    });
+
+    it('should return a 404', () => {
+      try {
+        service.deleteOne(999);
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
+  });
+
+  describe('create', () => {
+    it('should create a movie', () => {
+      const beforeCreate = service.getAll().length;
+
+      service.createMovie({
+        title: 'Test Movie',
+        genres: ['Test'],
+        year: 2000,
+      });
+      const afterCreate = service.getAll().length;
+      expect(afterCreate).toBeGreaterThan(beforeCreate);
+    });
+  });
+
+  describe('update', () => {
+    it('should update a movie', () => {
+      service.createMovie({
+        title: 'Test Movie',
+        genres: ['Test'],
+        year: 2000,
+      });
+      service.update(1, {
+        title: 'Update Test',
+      });
+
+      const movie = service.getOne(1);
+      expect(movie.title).toEqual('Update Test');
+    });
+
+    it('should throw a NotFoundException', () => {
+      try {
+        service.update(999, { title: 'Update Test' });
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
   });
 });
